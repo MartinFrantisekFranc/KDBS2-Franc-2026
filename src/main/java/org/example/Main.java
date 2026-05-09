@@ -7,6 +7,7 @@ import java.awt.event.ActionListener;
 import java.sql.*;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 
 import static java.awt.SystemColor.text;
 
@@ -18,6 +19,7 @@ public class Main extends JFrame {
     public JPanel panel5 = new JPanel();
     public JPanel panel6 = new JPanel();
     public JPanel panel7 = new JPanel();
+    public JPanel panel8 = new JPanel();
 
 
     JLabel popis = new JLabel("Popis potraviny:");
@@ -57,9 +59,18 @@ public class Main extends JFrame {
     JLabel potravina = new JLabel("Vyber potravinu: ");
     JComboBox<Druh> potravina2 = new JComboBox<>();
 
-    JButton tlac3 = new JButton("Zapsat konzumaci");
-    JButton zapsatZasobu = new JButton("Zapsat zasobu");
+    JLabel potravinaZP = new JLabel("Vyber potravinu: ");
+    JComboBox<Druh> potravinaZP2 = new JComboBox<>();
 
+    JLabel potravinaZP3 = new JLabel("Množ.: ");
+    JTextField potravinaZP4 = new JTextField(5);
+    JLabel potravinaZP5 = new JLabel("Dat. spotř.: ");
+    JTextField potravinaZP6 = new JTextField(5);
+
+    JButton zapsatZasobu = new JButton("Zapsat zásobu");
+
+    JButton tlac3 = new JButton("Zapsat konzumaci");
+    JButton zapsatZasobu2 = new JButton("Zapsat zásobu");
 
 
     public JButton tlac2 = new JButton("Zapsat potravinu");
@@ -80,10 +91,103 @@ public class Main extends JFrame {
         tlac2.addActionListener((e) -> tlacitko2());
 
         panel.add(zapsatZasobu);
-
+        zapsatZasobu.addActionListener((e) -> zapsatZasobu());
 
 
     }
+
+
+    private void zapsatZasobu() {
+        panel.removeAll();
+        panel8.setLayout(new BoxLayout(panel8, BoxLayout.X_AXIS));
+        panel8.add(potravinaZP);
+
+        String url = "jdbc:mysql://127.0.0.1:3306/KalTab";
+        String user = "root";
+        String password = "iukjl8M7UOJKL9I";
+
+
+
+        potravinaZP2.removeAllItems();
+
+        try (Connection conn = DriverManager.getConnection(url, user, password)) {
+
+            String sql = "SELECT * FROM potravina";
+            Statement stmt = conn.createStatement();
+            ResultSet rs = stmt.executeQuery(sql);
+
+            while (rs.next()) {
+                Druh d = new Druh(rs.getInt("ID"), rs.getString("popis"));
+                potravinaZP2.addItem(d);
+
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        panel8.add(potravinaZP2);
+        panel8.add(potravinaZP3);
+        panel8.add(potravinaZP4);
+        panel8.add(potravinaZP5);
+        panel8.add(potravinaZP6);
+        panel8.add(zapsatZasobu2);
+        zapsatZasobu2.addActionListener((e)->zapsatZasobu2());
+
+        panel.add(panel8);
+        panel.revalidate();
+
+    }
+
+    public void zapsatZasobu2() {
+        Druh vybrany = (Druh) potravinaZP2.getSelectedItem();
+
+        int id = vybrany.getId();
+
+        float mnoz = Float.parseFloat(cnt(potravinaZP4.getText()));
+
+        DateTimeFormatter formatter =
+                DateTimeFormatter.ofPattern("dd.MM.yyyy");
+
+        LocalDate datum = LocalDate.parse(potravinaZP6.getText(), formatter);
+
+
+
+        String url = "jdbc:mysql://127.0.0.1:3306/KalTab";
+        String user = "root";
+        String password = "iukjl8M7UOJKL9I";
+
+        try (Connection conn = DriverManager.getConnection(url, user, password)) {
+
+            String sql = "INSERT INTO zasoba "
+                    + "(ID_potravina, mnozstvi, datumSpotreby) "
+                    + "VALUES (?, ?, ?)";
+
+            PreparedStatement ps = conn.prepareStatement(sql);
+
+            ps.setInt(1, id);
+            ps.setDouble(2, mnoz);
+            ps.setDate(3, java.sql.Date.valueOf(datum));
+
+
+            ps.executeUpdate();
+
+            panel.removeAll();
+            panel.add(tlac);
+            panel.add(tlac2);
+            panel.add(zapsatZasobu);
+
+            panel.revalidate();
+
+
+            System.out.println("Uloženo!");
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+
     private void tlacitko() {
 //        panel.add(tlac2, BorderLayout.SOUTH);
 //        tlac2.addActionListener((e)-> tlacitko2());
@@ -209,6 +313,39 @@ public class Main extends JFrame {
 
 
             ps1.executeUpdate();
+
+            //přepočet
+            PreparedStatement ps2 = conn.prepareStatement(
+                    "SELECT * FROM zasoba "
+                    + "WHERE ID_potravina = ? "
+                    + "ORDER BY datumSpotreby"
+            );
+
+            ps2.setInt(1, id2);
+            ResultSet rs = ps2.executeQuery();
+            while (rs.next()) {
+
+                int idd = rs.getInt("ID");
+                float mnozs = (float) rs.getDouble("mnozstvi");
+                if (mnozs > 0) {
+                    PreparedStatement  ps3 = conn.prepareStatement(
+                            "UPDATE zasoba SET mnozstvi = ? WHERE ID = ?"
+                    );
+
+                    if (mnoz > mnozs) {
+                        ps3.setDouble(1, 0);
+                        mnoz = mnoz - mnozs;
+                    } else {
+                        ps3.setDouble(1, mnozs - mnoz);
+                    }
+                    ps3.setInt(2, idd);
+                    ps3.executeUpdate();
+                }
+
+
+            }
+
+
 
 
 
@@ -380,13 +517,7 @@ public class Main extends JFrame {
             e.printStackTrace();
         }
 
-        System.out.println("Ahoj");
 
-        LocalDate datum = LocalDate.now();
-        System.out.println(datum);
-        LocalTime cas = LocalTime.now();
-
-        System.out.println(cas);
 
 //        Main m = new Main();
 //        System.out.println(m.cnt("0,0"));
