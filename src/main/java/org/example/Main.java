@@ -5,6 +5,8 @@ import java.awt.*;
 
 import java.awt.event.ActionListener;
 import java.sql.*;
+import java.time.LocalDate;
+import java.time.LocalTime;
 
 import static java.awt.SystemColor.text;
 
@@ -14,6 +16,8 @@ public class Main extends JFrame {
     public JPanel panel3 = new JPanel();
     public JPanel panel4 = new JPanel();
     public JPanel panel5 = new JPanel();
+    public JPanel panel6 = new JPanel();
+    public JPanel panel7 = new JPanel();
 
 
     JLabel popis = new JLabel("Popis potraviny:");
@@ -45,6 +49,16 @@ public class Main extends JFrame {
     JTextField nakupovaneMnozstvi2 = new JTextField(4);
     JButton zapsat = new JButton("Zapsat");
 
+    JLabel vyberDruhJidla = new JLabel("Vyber druh jídla: ");
+    JComboBox<Druh> combo = new JComboBox<>();
+    JLabel mnozstvi = new JLabel("Spotřebované množství: ");
+    JTextField mnozstvi2 = new JTextField(5);
+
+    JLabel potravina = new JLabel("Vyber potravinu: ");
+    JComboBox<Druh> potravina2 = new JComboBox<>();
+
+    JButton tlac3 = new JButton("Zapsat konzumaci");
+    JButton zapsatZasobu = new JButton("Zapsat zasobu");
 
 
 
@@ -63,9 +77,9 @@ public class Main extends JFrame {
         tlac.addActionListener((e)-> tlacitko());
 
         panel.add(tlac2);
-        tlac2.addActionListener((e -> tlacitko2()));
+        tlac2.addActionListener((e) -> tlacitko2());
 
-
+        panel.add(zapsatZasobu);
 
 
 
@@ -76,6 +90,148 @@ public class Main extends JFrame {
 //        panel.remove(tlac);
 //        panel.revalidate();
 //        panel.repaint();
+
+        String url = "jdbc:mysql://127.0.0.1:3306/KalTab";
+        String user = "root";
+        String password = "iukjl8M7UOJKL9I";
+
+        combo.removeAllItems();
+
+        try (Connection conn = DriverManager.getConnection(url, user, password)) {
+
+            String sql = "SELECT * FROM ciselnik";
+            Statement stmt = conn.createStatement();
+            ResultSet rs = stmt.executeQuery(sql);
+
+            while (rs.next()) {
+                Druh d = new Druh(rs.getInt("ID"), rs.getString("druh"));
+                combo.addItem(d);
+
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        potravina2.removeAllItems();
+
+        try (Connection conn = DriverManager.getConnection(url, user, password)) {
+
+            String sql = "SELECT * FROM potravina";
+            Statement stmt = conn.createStatement();
+            ResultSet rs = stmt.executeQuery(sql);
+
+            while (rs.next()) {
+                Druh d = new Druh(rs.getInt("ID"), rs.getString("popis"));
+                potravina2.addItem(d);
+
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+
+        
+
+
+        panel.removeAll();
+        panel6.setLayout(new BoxLayout(panel6, BoxLayout.X_AXIS));
+        //panel.removeAll();
+        panel6.add(vyberDruhJidla);
+        panel6.add(combo);
+        panel6.add(potravina);
+        panel6.add(potravina2);
+        panel6.add(mnozstvi);
+        panel6.add(mnozstvi2);
+
+        panel7.setLayout(new BoxLayout(panel7, BoxLayout.X_AXIS));
+        panel7.add(tlac3);
+        tlac3.addActionListener((e)-> {
+            try {
+                zapsatKonzumaci();
+            } catch (SQLException ex) {
+                throw new RuntimeException(ex);
+            }
+        });
+        panel7.revalidate();
+
+        panel6.revalidate();
+
+        panel.add(panel6);
+        panel.add(panel7);
+
+        panel.revalidate();
+        panel.repaint();
+
+    }
+    private void zapsatKonzumaci() throws SQLException {
+
+
+        Druh vybrany = (Druh) combo.getSelectedItem();
+
+        int id = vybrany.getId();
+        Druh vybrany2 = (Druh) potravina2.getSelectedItem();
+
+        int id2 = vybrany2.getId();
+
+        float mnoz = Float.parseFloat(cnt(mnozstvi2.getText()));
+
+
+
+        String url = "jdbc:mysql://127.0.0.1:3306/KalTab";
+        String user = "uzivatel";
+        String password = "uzivatel";
+
+
+        Connection conn = DriverManager.getConnection(url, user, password);
+
+        try {
+
+            conn.setAutoCommit(false); // ← začátek transakce
+
+
+
+            PreparedStatement ps1 = conn.prepareStatement(
+                    "INSERT INTO konzumace" +
+                            "(datum, cas, ID_ciselnik, ID_potravina, spotrebovaneMnozstvi)" +
+                            "VALUES (?, ?, ?, ?, ?)"
+            );
+
+            ps1.setDate(1, java.sql.Date.valueOf(LocalDate.now()));
+            ps1.setTime(2, java.sql.Time.valueOf(LocalTime.now()));
+
+            ps1.setInt(3, id);
+            ps1.setInt(4, id2);
+
+            ps1.setDouble(5, mnoz);
+
+
+
+            ps1.executeUpdate();
+
+
+
+            conn.commit(); // ← potvrzení
+
+        } catch (Exception e) {
+
+            conn.rollback(); // ← vrácení změn
+
+            e.printStackTrace();
+
+        } finally {
+
+            conn.setAutoCommit(true);
+
+        }
+
+        panel.removeAll();
+        panel.add(tlac);
+        panel.add(tlac2);
+        panel.add(zapsatZasobu);
+        panel.revalidate();
+
     }
     private void tlacitko2() {
 //        panel.add(tlac);
@@ -166,6 +322,7 @@ public class Main extends JFrame {
             panel.removeAll();
             panel.add(tlac);
             panel.add(tlac2);
+            panel.add(zapsatZasobu);
             panel.revalidate();
 ;
 
@@ -224,6 +381,12 @@ public class Main extends JFrame {
         }
 
         System.out.println("Ahoj");
+
+        LocalDate datum = LocalDate.now();
+        System.out.println(datum);
+        LocalTime cas = LocalTime.now();
+
+        System.out.println(cas);
 
 //        Main m = new Main();
 //        System.out.println(m.cnt("0,0"));
