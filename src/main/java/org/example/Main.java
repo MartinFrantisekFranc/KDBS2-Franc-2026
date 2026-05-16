@@ -93,6 +93,18 @@ public class Main extends JFrame {
         panel.add(zapsatZasobu);
         zapsatZasobu.addActionListener((e) -> zapsatZasobu());
 
+        zapsatZasobu2.addActionListener((e)->zapsatZasobu2());
+
+        tlac3.addActionListener((e)-> {
+            try {
+                zapsatKonzumaci();
+            } catch (SQLException ex) {
+                throw new RuntimeException(ex);
+            }
+        });
+
+        zapsat.addActionListener((e) -> zapsatPotravinu());
+
 
     }
 
@@ -132,7 +144,7 @@ public class Main extends JFrame {
         panel8.add(potravinaZP5);
         panel8.add(potravinaZP6);
         panel8.add(zapsatZasobu2);
-        zapsatZasobu2.addActionListener((e)->zapsatZasobu2());
+
 
         panel.add(panel8);
         panel.revalidate();
@@ -251,13 +263,7 @@ public class Main extends JFrame {
 
         panel7.setLayout(new BoxLayout(panel7, BoxLayout.X_AXIS));
         panel7.add(tlac3);
-        tlac3.addActionListener((e)-> {
-            try {
-                zapsatKonzumaci();
-            } catch (SQLException ex) {
-                throw new RuntimeException(ex);
-            }
-        });
+
         panel7.revalidate();
 
         panel6.revalidate();
@@ -292,7 +298,7 @@ public class Main extends JFrame {
 
         try {
 
-            conn.setAutoCommit(false); // ← začátek transakce
+            conn.setAutoCommit(false);
 
 
 
@@ -349,11 +355,11 @@ public class Main extends JFrame {
 
 
 
-            conn.commit(); // ← potvrzení
+            conn.commit();
 
         } catch (Exception e) {
 
-            conn.rollback(); // ← vrácení změn
+            conn.rollback();
 
             e.printStackTrace();
 
@@ -409,7 +415,7 @@ public class Main extends JFrame {
         panel5.add(nakupovaneMnozstvi);
         panel5.add(nakupovaneMnozstvi2);
         panel5.add(zapsat);
-        zapsat.addActionListener((e) -> zapsatPotravinu());
+
 
 
         panel.removeAll();
