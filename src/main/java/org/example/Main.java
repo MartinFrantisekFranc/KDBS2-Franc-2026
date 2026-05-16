@@ -1,6 +1,7 @@
 package org.example;
 
 import javax.swing.*;
+import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 
 import java.awt.event.ActionListener;
@@ -20,6 +21,7 @@ public class Main extends JFrame {
     public JPanel panel6 = new JPanel();
     public JPanel panel7 = new JPanel();
     public JPanel panel8 = new JPanel();
+    public JPanel panel9 = new JPanel();
 
 
     JLabel popis = new JLabel("Popis potraviny:");
@@ -71,6 +73,12 @@ public class Main extends JFrame {
 
     JButton tlac3 = new JButton("Zapsat konzumaci");
     JButton zapsatZasobu2 = new JButton("Zapsat zásobu");
+    JButton prehledKonzumace = new JButton("Přehled konzumace");
+    JLabel datumKonzumace = new JLabel("Datum konzumece: ");
+    JTextField datumKonzum = new JTextField(5);
+    JLabel celkovaSpotreba = new JLabel("Celková spotřeba: ");
+    JLabel celkovaSpotreba2 = new JLabel("");
+    JPanel novyPanel = new JPanel();
 
 
     public JButton tlac2 = new JButton("Zapsat potravinu");
@@ -105,12 +113,107 @@ public class Main extends JFrame {
 
         zapsat.addActionListener((e) -> zapsatPotravinu());
 
+        //panel9.setLayout(new BoxLayout(panel9, BoxLayout.X_AXIS));
+        //panel9.add(datumKonzumace);
+        //panel9.add(datumKonzum);
+        //panel9.add(prehledKonzumace);
+        //panel.add(panel9);
+        panel.add(datumKonzumace);
+        panel.add(datumKonzum);
+        panel.add(prehledKonzumace);
+
+        prehledKonzumace.addActionListener((e)-> prehledKonzum());
+
 
     }
 
 
+    private void prehledKonzum() {
+
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd.MM.yyyy");
+        LocalDate datum = LocalDate.parse(datumKonzum.getText(), formatter);
+
+        DefaultTableModel model = new DefaultTableModel();
+
+        model.addColumn("datum");
+        model.addColumn("cas");
+        model.addColumn("druh");
+        model.addColumn("popis");
+        model.addColumn("spotrebovaneMnozstvi");
+        model.addColumn("energieKcal");
+        model.addColumn("energieKJ");
+
+        String url = "jdbc:mysql://127.0.0.1:3306/KalTab";
+        String user = "root";
+        String password = "iukjl8M7UOJKL9I";
+
+        try (Connection conn = DriverManager.getConnection(url, user, password)) {
+
+            CallableStatement cs = conn.prepareCall("{CALL konzumaceZaDen(?)}");
+
+            cs.setDate(1, java.sql.Date.valueOf(datum));
+
+            ResultSet rs = cs.executeQuery();
+
+            while (rs.next()) {
+
+                model.addRow(new Object[]{
+
+                        rs.getDate("datum"),
+                        rs.getTime("cas"),
+                        rs.getString("druh"),
+                        rs.getString("popis"),
+                        rs.getFloat("spotrebovaneMnozstvi"),
+                        rs.getFloat("energieKcal"),
+                        rs.getFloat("energieKJ")
+
+                });
+            }
+
+        } catch (SQLException e) {
+
+            e.printStackTrace();
+        }
+
+        try (Connection conn = DriverManager.getConnection(url, user, password)) {
+
+            CallableStatement cs = conn.prepareCall("{CALL konzumaceZaDenKcal(?)}");
+
+            cs.setDate(1, java.sql.Date.valueOf(datum));
+
+            ResultSet rs = cs.executeQuery();
+
+            if (rs.next()) {
+                celkovaSpotreba2.setText(rs.getString("energieKcal")+" kCal");
+            }
+
+        } catch (SQLException e) {
+
+            e.printStackTrace();
+        }
+
+        JTable table = new JTable(model);
+
+        table.setPreferredScrollableViewportSize(new Dimension(800, table.getRowHeight() * 10));
+
+        JScrollPane scroll = new JScrollPane(table);
+
+        panel.removeAll();
+        panel.add(scroll);
+
+        novyPanel.add(celkovaSpotreba);
+        novyPanel.add(celkovaSpotreba2);
+        panel.add(novyPanel);
+
+        panel.revalidate();
+        panel.repaint();
+    }
+
     private void zapsatZasobu() {
         panel.removeAll();
+        panel.revalidate();
+        panel8.removeAll();
+        panel8.revalidate();
         panel8.setLayout(new BoxLayout(panel8, BoxLayout.X_AXIS));
         panel8.add(potravinaZP);
 
@@ -185,6 +288,7 @@ public class Main extends JFrame {
             ps.executeUpdate();
 
             panel.removeAll();
+            panel.revalidate();
             panel.add(tlac);
             panel.add(tlac2);
             panel.add(zapsatZasobu);
@@ -252,6 +356,9 @@ public class Main extends JFrame {
 
 
         panel.removeAll();
+        panel.revalidate();
+        panel6.removeAll();
+        panel6.revalidate();
         panel6.setLayout(new BoxLayout(panel6, BoxLayout.X_AXIS));
         //panel.removeAll();
         panel6.add(vyberDruhJidla);
@@ -261,6 +368,8 @@ public class Main extends JFrame {
         panel6.add(mnozstvi);
         panel6.add(mnozstvi2);
 
+        panel7.removeAll();
+        panel7.revalidate();
         panel7.setLayout(new BoxLayout(panel7, BoxLayout.X_AXIS));
         panel7.add(tlac3);
 
@@ -370,6 +479,7 @@ public class Main extends JFrame {
         }
 
         panel.removeAll();
+        panel.revalidate();
         panel.add(tlac);
         panel.add(tlac2);
         panel.add(zapsatZasobu);
@@ -381,6 +491,8 @@ public class Main extends JFrame {
 //        panel.remove(tlac2);
 //        panel.revalidate();
 
+        panel2.removeAll();
+        panel2.revalidate();
         panel2.setLayout(new BoxLayout(panel2, BoxLayout.X_AXIS));
         panel2.add(popis);
         panel2.add(popis2);
@@ -389,6 +501,8 @@ public class Main extends JFrame {
         panel2.add(kJ);
         panel2.add(kJ2);
 
+        panel3.removeAll();
+        panel3.revalidate();
         panel3.setLayout(new BoxLayout(panel3, BoxLayout.X_AXIS));
         panel3.add(tuky);
         panel3.add(tuky2);
@@ -399,6 +513,8 @@ public class Main extends JFrame {
         panel3.add(zTohoCukry);
         panel3.add(zTohoCukry2);
 
+        panel4.removeAll();
+        panel4.revalidate();
         panel4.setLayout(new BoxLayout(panel4, BoxLayout.X_AXIS));
         panel4.add(bilkoviny);
         panel4.add(bilkoviny2);
@@ -407,6 +523,8 @@ public class Main extends JFrame {
         panel4.add(sul);
         panel4.add(sul2);
 
+        panel5.removeAll();
+        panel5.revalidate();
         panel5.setLayout(new BoxLayout(panel5, BoxLayout.X_AXIS));
         panel5.add(hmotnostJednohoKusu);
         panel5.add(hmotnostJednohoKusu2);
@@ -419,6 +537,7 @@ public class Main extends JFrame {
 
 
         panel.removeAll();
+        panel.revalidate();
         panel.add(panel2);
         panel.add(panel3);
         panel.add(panel4);
@@ -463,6 +582,7 @@ public class Main extends JFrame {
             ps.executeUpdate();
 
             panel.removeAll();
+            panel.revalidate();
             panel.add(tlac);
             panel.add(tlac2);
             panel.add(zapsatZasobu);
