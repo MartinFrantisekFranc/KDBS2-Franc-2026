@@ -80,6 +80,13 @@ public class Main extends JFrame {
     JLabel celkovaSpotreba2 = new JLabel("");
     JPanel novyPanel = new JPanel();
 
+    JButton zasoba = new JButton("Ukaž zásobu");
+    JButton tlacitkoZpet = new JButton("Zpět");
+    JButton nakup = new JButton("Nákup");
+    JLabel zadejID = new JLabel("Zadej ID položky nákupu:");
+    JTextField zadanoID = new JTextField(5);
+    JButton zadejPolozku = new JButton("Potvrď koupenou položku");
+
 
     public JButton tlac2 = new JButton("Zapsat potravinu");
     JButton tlac = new JButton("Zapsat konzumaci");
@@ -124,7 +131,206 @@ public class Main extends JFrame {
 
         prehledKonzumace.addActionListener((e)-> prehledKonzum());
 
+        panel.add(zasoba);
+        zasoba.addActionListener((e)-> ukazZasobu());
+        panel.add(nakup);
+        nakup.addActionListener((e) -> ukazNakup());
 
+        tlacitkoZpet.addActionListener((e)->zpet());
+
+        zadejPolozku.addActionListener((e)-> odstranit());
+    }
+
+    private void odstranit() {
+        DefaultTableModel model = new DefaultTableModel();
+
+        model.addColumn("ID");
+        model.addColumn("popis");
+        model.addColumn("koupit množství");
+        model.addColumn("je koupeno?");
+
+        String url = "jdbc:mysql://127.0.0.1:3306/KalTab";
+        String user = "root";
+        String password = "iukjl8M7UOJKL9I";
+
+
+        int id = 0;
+
+        id = Integer.parseInt(zadanoID.getText());
+
+        try (Connection conn = DriverManager.getConnection(url, user, password)) {
+
+            String sql = "UPDATE nakupPolozek SET koupeno = true where ID = ?";
+
+            PreparedStatement ps = conn.prepareStatement(sql);
+            ps.setInt(1, id);
+            ps.executeUpdate();
+
+            sql = "select n.ID, p.popis, n.koupitMnozstvi, n.koupeno from nakupPolozek n join potravina p on n.ID_potravina = p.ID where koupeno = false;";
+            Statement stmt = conn.createStatement();
+            ResultSet rs = stmt.executeQuery(sql);
+
+
+
+            while (rs.next()) {
+
+                model.addRow(new Object[]{
+
+                        rs.getInt("ID"),
+                        rs.getString("popis"),
+                        rs.getFloat("koupitMnozstvi"),
+                        rs.getBoolean("koupeno")
+
+                });
+            }
+
+        } catch (SQLException e) {
+
+            e.printStackTrace();
+        }
+
+        JTable table = new JTable(model);
+
+        table.setPreferredScrollableViewportSize(new Dimension(800, table.getRowHeight() * 10));
+
+        JScrollPane scroll = new JScrollPane(table);
+
+        panel.removeAll();
+        panel.add(scroll);
+        novyPanel.removeAll();
+        novyPanel.add(zadejID);
+        novyPanel.add(zadanoID);
+        novyPanel.add(zadejPolozku);
+        novyPanel.add(tlacitkoZpet);
+        panel.add(novyPanel);
+
+        panel.revalidate();
+        panel.repaint();
+    }
+
+
+
+    private void ukazNakup() {
+        DefaultTableModel model = new DefaultTableModel();
+
+        model.addColumn("ID");
+        model.addColumn("popis");
+        model.addColumn("koupit množství");
+        model.addColumn("je koupeno?");
+
+        String url = "jdbc:mysql://127.0.0.1:3306/KalTab";
+        String user = "root";
+        String password = "iukjl8M7UOJKL9I";
+
+        try (Connection conn = DriverManager.getConnection(url, user, password)) {
+
+
+            String sql = "select n.ID, p.popis, n.koupitMnozstvi, n.koupeno from nakupPolozek n join potravina p on n.ID_potravina = p.ID where koupeno = false;";
+            Statement stmt = conn.createStatement();
+            ResultSet rs = stmt.executeQuery(sql);
+
+
+
+            while (rs.next()) {
+
+                model.addRow(new Object[]{
+
+                        rs.getInt("ID"),
+                        rs.getString("popis"),
+                        rs.getFloat("koupitMnozstvi"),
+                        rs.getBoolean("koupeno")
+
+                });
+            }
+
+        } catch (SQLException e) {
+
+            e.printStackTrace();
+        }
+
+        JTable table = new JTable(model);
+
+        table.setPreferredScrollableViewportSize(new Dimension(800, table.getRowHeight() * 10));
+
+        JScrollPane scroll = new JScrollPane(table);
+
+        panel.removeAll();
+        panel.add(scroll);
+        novyPanel.removeAll();
+        novyPanel.add(zadejID);
+        novyPanel.add(zadanoID);
+        novyPanel.add(zadejPolozku);
+        novyPanel.add(tlacitkoZpet);
+        panel.add(novyPanel);
+
+        panel.revalidate();
+        panel.repaint();
+    }
+
+    private void zpet() {
+        panel.removeAll();
+        panel.add(tlac);
+        panel.add(tlac2);
+        panel.add(zapsatZasobu);
+        panel.add(datumKonzumace);
+        panel.add(datumKonzum);
+        panel.add(prehledKonzumace);
+        panel.add(zasoba);
+        panel.add(nakup);
+        panel.revalidate();
+
+    }
+
+    private void ukazZasobu() {
+        DefaultTableModel model = new DefaultTableModel();
+
+        model.addColumn("popis");
+        model.addColumn("množství");
+        model.addColumn("datum spotřeby");
+
+        String url = "jdbc:mysql://127.0.0.1:3306/KalTab";
+        String user = "root";
+        String password = "iukjl8M7UOJKL9I";
+
+        try (Connection conn = DriverManager.getConnection(url, user, password)) {
+
+
+            String sql = "select p.popis, z.mnozstvi, z.datumSpotreby from zasoba z join potravina p on z.ID_potravina = p.ID where z.mnozstvi > 0;";
+            Statement stmt = conn.createStatement();
+            ResultSet rs = stmt.executeQuery(sql);
+
+
+
+            while (rs.next()) {
+
+                model.addRow(new Object[]{
+
+                        rs.getString("popis"),
+                        rs.getFloat("mnozstvi"),
+                        rs.getDate("datumSpotreby")
+
+                });
+            }
+
+        } catch (SQLException e) {
+
+            e.printStackTrace();
+        }
+
+        JTable table = new JTable(model);
+
+        table.setPreferredScrollableViewportSize(new Dimension(800, table.getRowHeight() * 10));
+
+        JScrollPane scroll = new JScrollPane(table);
+
+        panel.removeAll();
+        panel.add(scroll);
+        novyPanel.removeAll();
+        novyPanel.add(tlacitkoZpet);
+        panel.add(novyPanel);
+
+        panel.revalidate();
+        panel.repaint();
     }
 
 
@@ -148,6 +354,7 @@ public class Main extends JFrame {
         String password = "iukjl8M7UOJKL9I";
 
         try (Connection conn = DriverManager.getConnection(url, user, password)) {
+            //volání procedury
 
             CallableStatement cs = conn.prepareCall("{CALL konzumaceZaDen(?)}");
 
@@ -176,6 +383,7 @@ public class Main extends JFrame {
         }
 
         try (Connection conn = DriverManager.getConnection(url, user, password)) {
+            //volání funkce přes proceduru
 
             CallableStatement cs = conn.prepareCall("{CALL konzumaceZaDenKcal(?)}");
 
@@ -201,6 +409,8 @@ public class Main extends JFrame {
         panel.removeAll();
         panel.add(scroll);
 
+        novyPanel.removeAll();
+        novyPanel.add(tlacitkoZpet);
         novyPanel.add(celkovaSpotreba);
         novyPanel.add(celkovaSpotreba2);
         panel.add(novyPanel);
@@ -246,6 +456,7 @@ public class Main extends JFrame {
         panel8.add(potravinaZP4);
         panel8.add(potravinaZP5);
         panel8.add(potravinaZP6);
+        panel8.add(tlacitkoZpet);
         panel8.add(zapsatZasobu2);
 
 
@@ -289,9 +500,7 @@ public class Main extends JFrame {
 
             panel.removeAll();
             panel.revalidate();
-            panel.add(tlac);
-            panel.add(tlac2);
-            panel.add(zapsatZasobu);
+            panel.add(tlacitkoZpet);
 
             panel.revalidate();
 
@@ -371,6 +580,7 @@ public class Main extends JFrame {
         panel7.removeAll();
         panel7.revalidate();
         panel7.setLayout(new BoxLayout(panel7, BoxLayout.X_AXIS));
+        panel7.add(tlacitkoZpet);
         panel7.add(tlac3);
 
         panel7.revalidate();
@@ -479,10 +689,7 @@ public class Main extends JFrame {
         }
 
         panel.removeAll();
-        panel.revalidate();
-        panel.add(tlac);
-        panel.add(tlac2);
-        panel.add(zapsatZasobu);
+        panel.add(tlacitkoZpet);
         panel.revalidate();
 
     }
@@ -532,6 +739,7 @@ public class Main extends JFrame {
         panel5.add(minimalniMnozstvi2);
         panel5.add(nakupovaneMnozstvi);
         panel5.add(nakupovaneMnozstvi2);
+        panel5.add(tlacitkoZpet);
         panel5.add(zapsat);
 
 
@@ -583,9 +791,7 @@ public class Main extends JFrame {
 
             panel.removeAll();
             panel.revalidate();
-            panel.add(tlac);
-            panel.add(tlac2);
-            panel.add(zapsatZasobu);
+            panel.add(tlacitkoZpet);
             panel.revalidate();
 ;
 
