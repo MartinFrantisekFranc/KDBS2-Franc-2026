@@ -103,9 +103,19 @@ public class Main extends JFrame {
 
     String uzivatelGlobal = "0";
 
+    JLabel smazatUzivatele = new JLabel("Smazat uživatele: ");
+
     int idUzivatelGlobal;
-
-
+    JLabel pridatUzivatele = new JLabel("Přidat uživatele: ");
+    JLabel nickname = new JLabel("Login: ");
+    JLabel passw = new JLabel("Heslo: ");
+    JTextField nick = new JTextField(5);
+    JTextField pass = new JTextField(5);
+    JButton pridat = new JButton("Přidat uživatele");
+    JLabel zadejIdUziv = new JLabel("Zadej ID uživatele ke smazání: ");
+    JTextField uzivKeSmaz = new JTextField(5);
+    JButton smazat = new JButton("Smazat uživatele");
+    JPanel panel10 = new JPanel();
 
 
     public JButton tlac2 = new JButton("Zapsat potravinu");
@@ -150,6 +160,71 @@ public class Main extends JFrame {
         });
 
         zapsat.addActionListener((e) -> zapsatPotravinu());
+        pridat.addActionListener((e)-> pridatUzivatele());
+        smazat.addActionListener((e)-> smazatUzivatelele());
+    }
+    private void smazatUzivatelele() {
+        int idUzivatele = Integer.parseInt(uzivKeSmaz.getText());
+        int volba = JOptionPane.showConfirmDialog(this, "Opravdu smazat uživatele s veškerými jeho daty?","UPOZORNĚNÍ",JOptionPane.YES_NO_OPTION);
+
+        if (volba == JOptionPane.YES_OPTION) {
+            String url = "jdbc:mysql://127.0.0.1:3306/KalTab";
+            String user = "root";
+            String password = "iukjl8M7UOJKL9I";
+
+
+            try (Connection conn = DriverManager.getConnection(url, user, password)) {
+
+                String sql = "DELETE FROM konzumace WHERE ID_uzivatel = ?";
+
+                PreparedStatement ps = conn.prepareStatement(sql);
+                ps.setInt(1,idUzivatele);
+                ps.executeUpdate();
+
+                sql = "DELETE FROM zasoba WHERE ID_uzivatel = ?";
+                ps = conn.prepareStatement(sql);
+                ps.setInt(1, idUzivatele);
+                ps.executeUpdate();
+
+                sql = "DELETE FROM nakupPolozek WHERE ID_uzivatel = ?";
+                ps = conn.prepareStatement(sql);
+                ps.setInt(1, idUzivatele);
+                ps.executeUpdate();
+
+                sql = "DELETE FROM uzivatele WHERE ID = ?";
+                ps = conn.prepareStatement(sql);
+                ps.setInt(1, idUzivatele);
+                ps.executeUpdate();
+
+
+            } catch (SQLException e) {
+
+                e.printStackTrace();
+            }
+        }
+        admin();
+    }
+
+    private void pridatUzivatele() {
+        String url = "jdbc:mysql://127.0.0.1:3306/KalTab";
+        String user = "root";
+        String password = "iukjl8M7UOJKL9I";
+
+        try (Connection conn = DriverManager.getConnection(url, user, password)) {
+
+            String sql =
+                    "INSERT INTO uzivatele (jmeno, heslo) VALUES (?, ?)";
+
+            PreparedStatement ps = conn.prepareStatement(sql);
+            ps.setString(1, nick.getText());
+            ps.setString(2, pass.getText());
+            ps.executeUpdate();
+
+        } catch (SQLException e) {
+
+            e.printStackTrace();
+        }
+        admin();
     }
 
     private void prihlaseni() {
@@ -202,8 +277,64 @@ public class Main extends JFrame {
 
     private void admin() {
 
+        DefaultTableModel model = new DefaultTableModel();
+        model.addColumn("ID");
+        model.addColumn("Jméno uživatele");
+        model.addColumn("Heslo uživatele");
+
+        String url = "jdbc:mysql://127.0.0.1:3306/KalTab";
+        String user = "root";
+        String password = "iukjl8M7UOJKL9I";
+
+        try (Connection conn = DriverManager.getConnection(url, user, password)) {
+
+            String sql = "SELECT * FROM uzivatele";
+            Statement stmt = conn.createStatement();
+            ResultSet rs = stmt.executeQuery(sql);
+
+            while (rs.next()) {
+
+                model.addRow(new Object[]{
+
+                        rs.getInt("ID"),
+                        rs.getString("jmeno"),
+                        rs.getString("heslo"),
+
+                });
+            }
+
+        } catch (SQLException e) {
+
+            e.printStackTrace();
+        }
+
+        JTable table = new JTable(model);
+        table.setPreferredScrollableViewportSize(new Dimension(800, table.getRowHeight() * 6));
+        JScrollPane scrollPane = new JScrollPane(table);
+
+
         panel.removeAll();
         panel.add(tlac2);
+        panel.add(scrollPane);
+
+        panel.add(pridatUzivatele);
+
+        panel9.setLayout(new BoxLayout(panel9, BoxLayout.X_AXIS));
+        panel9.add(nickname);
+        panel9.add(nick);
+        panel9.add(passw);
+        panel9.add(pass);
+        panel9.add(pridat);
+
+        panel.add(panel9);
+        panel.add(smazatUzivatele);
+
+        panel10.setLayout(new BoxLayout(panel10, BoxLayout.X_AXIS));
+        panel10.add(zadejIdUziv);
+        panel10.add(uzivKeSmaz);
+        panel10.add(smazat);
+        panel.add(panel10);
+
         panel.revalidate();
 
 
@@ -534,8 +665,7 @@ public class Main extends JFrame {
         panel.revalidate();
         panel.repaint();
 
-        System.out.println("Datum: " + datum);
-        System.out.println("ID uživatele: " + idUzivatelGlobal);
+
     }
 
     private void zapsatZasobu() {
@@ -947,41 +1077,5 @@ public class Main extends JFrame {
             Main okno = new Main();
             okno.setVisible(true);
         });
-
-        String url = "jdbc:mysql://127.0.0.1:3306/KalTab";
-        String user = "root";
-        String password = "iukjl8M7UOJKL9I";
-
-        try (Connection conn = DriverManager.getConnection(url, user, password)) {
-
-            String sql = "SELECT * FROM ciselnik";
-            Statement stmt = conn.createStatement();
-            ResultSet rs = stmt.executeQuery(sql);
-
-            while (rs.next()) {
-                int id = rs.getInt("id");
-                String jmeno = rs.getString("druh");
-
-                System.out.println(id + " " + jmeno);
-            }
- 
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-
-
-
-//        Main m = new Main();
-//        System.out.println(m.cnt("0,0"));
     }
-
-
 }
-//
-//String sql = "INSERT INTO uzivatele (jmeno, vek) VALUES (?, ?)";
-//PreparedStatement ps = conn.prepareStatement(sql);
-//
-//ps.setString(1, "Petr");
-//ps.setInt(2, 25);
-//
-//ps.executeUpdate();
