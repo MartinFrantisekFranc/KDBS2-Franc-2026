@@ -74,18 +74,38 @@ public class Main extends JFrame {
     JButton tlac3 = new JButton("Zapsat konzumaci");
     JButton zapsatZasobu2 = new JButton("Zapsat zásobu");
     JButton prehledKonzumace = new JButton("Přehled konzumace");
-    JLabel datumKonzumace = new JLabel("Datum konzumece: ");
-    JTextField datumKonzum = new JTextField(5);
+    JLabel datumKonzumace = new JLabel("Datum konzumace: ");
+    JTextField datumKonzum = new JTextField( "30.05.2026", 5);
     JLabel celkovaSpotreba = new JLabel("Celková spotřeba: ");
     JLabel celkovaSpotreba2 = new JLabel("");
     JPanel novyPanel = new JPanel();
 
     JButton zasoba = new JButton("Ukaž zásobu");
     JButton tlacitkoZpet = new JButton("Zpět");
+    JButton tlacitkoZpet2 = new JButton("Zpět");
     JButton nakup = new JButton("Nákup");
     JLabel zadejID = new JLabel("Zadej ID položky nákupu:");
     JTextField zadanoID = new JTextField(5);
     JButton zadejPolozku = new JButton("Potvrď koupenou položku");
+
+    JPanel prihlaseni1 = new JPanel();
+    JPanel prihlaseni2 = new JPanel();
+    JLabel login = new JLabel("Login: ");
+    JLabel heslo = new JLabel("Heslo: ");
+    JTextField login1 = new JTextField(5);
+    JTextField heslo1 = new JTextField(5);
+
+    JButton prihlasit = new JButton("Příhlášení");
+
+    String heslo2 = "0";
+    String uzivatel = "0";
+    String heslo3 = "0";
+
+    String uzivatelGlobal = "0";
+
+    int idUzivatelGlobal;
+
+
 
 
     public JButton tlac2 = new JButton("Zapsat potravinu");
@@ -95,21 +115,32 @@ public class Main extends JFrame {
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         setSize(600,300);
 
+        login1.setMaximumSize(login1.getPreferredSize());
+        heslo1.setMaximumSize(heslo1.getPreferredSize());
+
         add(panel, BorderLayout.NORTH);
+        prihlaseni1.setLayout(new BoxLayout(prihlaseni1, BoxLayout.X_AXIS));
+        prihlaseni2.setLayout(new BoxLayout(prihlaseni2, BoxLayout.X_AXIS));
+        prihlaseni1.add(login);
+        prihlaseni1.add(login1);
+        prihlaseni2.add(heslo);
+        prihlaseni2.add(heslo1);
 
         panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+        panel.add(prihlaseni1);
+        panel.add(prihlaseni2);
+        panel.add(prihlasit);
 
-        panel.add(tlac);
+        prihlasit.addActionListener((e) -> prihlaseni());
         tlac.addActionListener((e)-> tlacitko());
-
-        panel.add(tlac2);
-        tlac2.addActionListener((e) -> tlacitko2());
-
-        panel.add(zapsatZasobu);
         zapsatZasobu.addActionListener((e) -> zapsatZasobu());
-
+        prehledKonzumace.addActionListener((e)-> prehledKonzum());
+        nakup.addActionListener((e) -> ukazNakup());
+        zasoba.addActionListener((e)-> ukazZasobu());
+        tlacitkoZpet.addActionListener((e)->zpet());
+        tlac2.addActionListener((e) -> tlacitko2());
+        zadejPolozku.addActionListener((e)-> odstranit());
         zapsatZasobu2.addActionListener((e)->zapsatZasobu2());
-
         tlac3.addActionListener((e)-> {
             try {
                 zapsatKonzumaci();
@@ -119,6 +150,86 @@ public class Main extends JFrame {
         });
 
         zapsat.addActionListener((e) -> zapsatPotravinu());
+    }
+
+    private void prihlaseni() {
+        uzivatel = login1.getText();
+        heslo2 = heslo1.getText();
+
+        String url = "jdbc:mysql://127.0.0.1:3306/KalTab";
+        String user = "root";
+        String password = "iukjl8M7UOJKL9I";
+
+        try (Connection conn = DriverManager.getConnection(url, user, password)) {
+
+            String sql = "SELECT * FROM uzivatele where jmeno = ?";
+
+            PreparedStatement ps = conn.prepareStatement(sql);
+            ps.setString(1, uzivatel);
+
+
+            ResultSet rs = ps.executeQuery();
+
+
+
+            while (rs.next()) {
+
+                heslo3 = rs.getString("heslo");
+                idUzivatelGlobal = rs.getInt("ID");
+            }
+
+        } catch (SQLException e) {
+
+            e.printStackTrace();
+        }
+
+        uzivatelGlobal = "0";
+        if (heslo2.equals(heslo3)) {
+            uzivatelGlobal = uzivatel;
+        } else {
+            JOptionPane.showMessageDialog(null, "Neznámý uživatel!");
+        }
+
+        if (uzivatelGlobal.equals("admin")) {
+            admin();
+        } else if (!uzivatelGlobal.equals("admin") && heslo2.equals(heslo3)) {
+            uzivatelMod();
+        }
+
+
+        System.out.println(uzivatelGlobal);
+    }
+
+    private void admin() {
+
+        panel.removeAll();
+        panel.add(tlac2);
+        panel.revalidate();
+
+
+
+
+
+        //System.out.println("ahoj");
+    }
+    private void tlacitkoZpet3() {
+        admin();
+    }
+    private void uzivatelMod() {
+        panel.removeAll();
+        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+
+        panel.add(tlac);
+
+
+
+
+        panel.add(zapsatZasobu);
+
+
+
+
+
 
         //panel9.setLayout(new BoxLayout(panel9, BoxLayout.X_AXIS));
         //panel9.add(datumKonzumace);
@@ -129,16 +240,14 @@ public class Main extends JFrame {
         panel.add(datumKonzum);
         panel.add(prehledKonzumace);
 
-        prehledKonzumace.addActionListener((e)-> prehledKonzum());
+
 
         panel.add(zasoba);
-        zasoba.addActionListener((e)-> ukazZasobu());
+
         panel.add(nakup);
-        nakup.addActionListener((e) -> ukazNakup());
 
-        tlacitkoZpet.addActionListener((e)->zpet());
 
-        zadejPolozku.addActionListener((e)-> odstranit());
+        panel.revalidate();
     }
 
     private void odstranit() {
@@ -160,15 +269,17 @@ public class Main extends JFrame {
 
         try (Connection conn = DriverManager.getConnection(url, user, password)) {
 
-            String sql = "UPDATE nakupPolozek SET koupeno = true where ID = ?";
+            String sql = "UPDATE nakupPolozek SET koupeno = true where ID = ?" + " AND ID_uzivatel = ?";
 
             PreparedStatement ps = conn.prepareStatement(sql);
             ps.setInt(1, id);
+            ps.setInt(2, idUzivatelGlobal);
             ps.executeUpdate();
 
-            sql = "select n.ID, p.popis, n.koupitMnozstvi, n.koupeno from nakupPolozek n join potravina p on n.ID_potravina = p.ID where koupeno = false;";
-            Statement stmt = conn.createStatement();
-            ResultSet rs = stmt.executeQuery(sql);
+            sql = "select n.ID, p.popis, n.koupitMnozstvi, n.koupeno from nakupPolozek n join potravina p on n.ID_potravina = p.ID where koupeno = false" + " AND ID_uzivatel = ?";
+            PreparedStatement ps2 = conn.prepareStatement(sql);
+            ps2.setInt(1, idUzivatelGlobal);
+            ResultSet rs = ps2.executeQuery();
 
 
 
@@ -225,9 +336,10 @@ public class Main extends JFrame {
         try (Connection conn = DriverManager.getConnection(url, user, password)) {
 
 
-            String sql = "select n.ID, p.popis, n.koupitMnozstvi, n.koupeno from nakupPolozek n join potravina p on n.ID_potravina = p.ID where koupeno = false;";
-            Statement stmt = conn.createStatement();
-            ResultSet rs = stmt.executeQuery(sql);
+            String sql = "select n.ID, p.popis, n.koupitMnozstvi, n.koupeno from nakupPolozek n join potravina p on n.ID_potravina = p.ID where koupeno = false" + " AND n.ID_uzivatel = ?";
+            PreparedStatement ps = conn.prepareStatement(sql);
+            ps.setInt(1, idUzivatelGlobal);
+            ResultSet rs = ps.executeQuery();
 
 
 
@@ -270,7 +382,7 @@ public class Main extends JFrame {
     private void zpet() {
         panel.removeAll();
         panel.add(tlac);
-        panel.add(tlac2);
+
         panel.add(zapsatZasobu);
         panel.add(datumKonzumace);
         panel.add(datumKonzum);
@@ -295,9 +407,10 @@ public class Main extends JFrame {
         try (Connection conn = DriverManager.getConnection(url, user, password)) {
 
 
-            String sql = "select p.popis, z.mnozstvi, z.datumSpotreby from zasoba z join potravina p on z.ID_potravina = p.ID where z.mnozstvi > 0;";
-            Statement stmt = conn.createStatement();
-            ResultSet rs = stmt.executeQuery(sql);
+            String sql = "select p.popis, z.mnozstvi, z.datumSpotreby from zasoba z join potravina p on z.ID_potravina = p.ID where z.mnozstvi > 0" + " AND z.ID_uzivatel = ?";
+            PreparedStatement ps = conn.prepareStatement(sql);
+            ps.setInt(1, idUzivatelGlobal);
+            ResultSet rs = ps.executeQuery();
 
 
 
@@ -337,6 +450,7 @@ public class Main extends JFrame {
     private void prehledKonzum() {
 
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd.MM.yyyy");
+
         LocalDate datum = LocalDate.parse(datumKonzum.getText(), formatter);
 
         DefaultTableModel model = new DefaultTableModel();
@@ -356,9 +470,10 @@ public class Main extends JFrame {
         try (Connection conn = DriverManager.getConnection(url, user, password)) {
             //volání procedury
 
-            CallableStatement cs = conn.prepareCall("{CALL konzumaceZaDen(?)}");
+            CallableStatement cs = conn.prepareCall("{CALL konzumaceZaDen(?, ?)}");
 
             cs.setDate(1, java.sql.Date.valueOf(datum));
+            cs.setInt(2, idUzivatelGlobal);
 
             ResultSet rs = cs.executeQuery();
 
@@ -385,9 +500,10 @@ public class Main extends JFrame {
         try (Connection conn = DriverManager.getConnection(url, user, password)) {
             //volání funkce přes proceduru
 
-            CallableStatement cs = conn.prepareCall("{CALL konzumaceZaDenKcal(?)}");
+            CallableStatement cs = conn.prepareCall("{CALL konzumaceZaDenKcal(?, ?)}");
 
             cs.setDate(1, java.sql.Date.valueOf(datum));
+            cs.setInt(2, idUzivatelGlobal);
 
             ResultSet rs = cs.executeQuery();
 
@@ -417,6 +533,9 @@ public class Main extends JFrame {
 
         panel.revalidate();
         panel.repaint();
+
+        System.out.println("Datum: " + datum);
+        System.out.println("ID uživatele: " + idUzivatelGlobal);
     }
 
     private void zapsatZasobu() {
@@ -486,14 +605,15 @@ public class Main extends JFrame {
         try (Connection conn = DriverManager.getConnection(url, user, password)) {
 
             String sql = "INSERT INTO zasoba "
-                    + "(ID_potravina, mnozstvi, datumSpotreby) "
-                    + "VALUES (?, ?, ?)";
+                    + "(ID_potravina, mnozstvi, datumSpotreby, ID_uzivatel) "
+                    + "VALUES (?, ?, ?, ?)";
 
             PreparedStatement ps = conn.prepareStatement(sql);
 
             ps.setInt(1, id);
             ps.setDouble(2, mnoz);
             ps.setDate(3, java.sql.Date.valueOf(datum));
+            ps.setInt(4, idUzivatelGlobal);
 
 
             ps.executeUpdate();
@@ -623,8 +743,8 @@ public class Main extends JFrame {
 
             PreparedStatement ps1 = conn.prepareStatement(
                     "INSERT INTO konzumace" +
-                            "(datum, cas, ID_ciselnik, ID_potravina, spotrebovaneMnozstvi)" +
-                            "VALUES (?, ?, ?, ?, ?)"
+                            "(datum, cas, ID_ciselnik, ID_potravina, spotrebovaneMnozstvi, ID_uzivatel)" +
+                            "VALUES (?, ?, ?, ?, ?, ?)"
             );
 
             ps1.setDate(1, java.sql.Date.valueOf(LocalDate.now()));
@@ -634,6 +754,7 @@ public class Main extends JFrame {
             ps1.setInt(4, id2);
 
             ps1.setDouble(5, mnoz);
+            ps1.setInt(6, idUzivatelGlobal);
 
 
 
@@ -641,12 +762,10 @@ public class Main extends JFrame {
 
             //přepočet
             PreparedStatement ps2 = conn.prepareStatement(
-                    "SELECT * FROM zasoba "
-                    + "WHERE ID_potravina = ? "
-                    + "ORDER BY datumSpotreby"
-            );
+                    "SELECT * FROM zasoba " + "WHERE ID_potravina = ? " + "AND ID_uzivatel = ?" + " ORDER BY datumSpotreby");
 
             ps2.setInt(1, id2);
+            ps2.setInt(2, idUzivatelGlobal);
             ResultSet rs = ps2.executeQuery();
             while (rs.next()) {
 
@@ -739,7 +858,8 @@ public class Main extends JFrame {
         panel5.add(minimalniMnozstvi2);
         panel5.add(nakupovaneMnozstvi);
         panel5.add(nakupovaneMnozstvi2);
-        panel5.add(tlacitkoZpet);
+        panel5.add(tlacitkoZpet2);
+        tlacitkoZpet2.addActionListener((e)->tlacitkoZpet3());
         panel5.add(zapsat);
 
 
